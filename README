@@ -1,2 +1,2 @@
 this script is inspired by http://d.hatena.ne.jp/lolloo-htn/20090417/1239972394.
-usage: nico-downloader.py --user=USERNAME --passwd=PASSWD myscript_url
+usage: nico-downloader.py --user=USERNAME --passwd=PASSWD mylist_url

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #coding:sjis
 """
-usage: nico-downloader --user=USERNAME --passwd=PASSWD myscript_url
+usage: nico-downloader --user=USERNAME --passwd=PASSWD mylist_url
 
 this script is inspired by http://d.hatena.ne.jp/lolloo-htn/20090417/1239972394.
 """
