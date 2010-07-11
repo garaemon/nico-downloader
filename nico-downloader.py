@@ -43,6 +43,7 @@ def nico_download(smid, user, passwd):
     print "downloading %s" % smid
     while True:
         try:
+            time.sleep(10)
             data = urllib.urlopen("http://www.nicovideo.jp/api/getthumbinfo/"+smid).read()
             pTree = xml.dom.minidom.parseString(data)
             videoTitle = pTree.getElementsByTagName("title")[0].firstChild.data
