@@ -23,6 +23,7 @@ import subprocess
 import codecs
 import progressbar
 import multiprocessing
+import yaml
 
 debug = True
 
@@ -117,10 +118,18 @@ def setup_parser(parser):
                       default = False,
                       help = "specify your niconico acount's password",
                       action = "store_true")
+    parser.add_option("--config", "-c",
+                      dest = "config",
+                      default = "~/.niconico")
 
 def usage():
     print __doc__ % vars()
-    
+
+def read_user(config):
+    return yaml.load(open(os.path.expanduser(config)).read())['user']
+def read_user(config):
+    return yaml.load(open(os.path.expanduser(config)).read())['passwd']
+
 # main...
 if __name__ == "__main__":
     parser = OptionParser()
@@ -139,7 +148,16 @@ if __name__ == "__main__":
                progressbar.Bar()]
     pbar = progressbar.ProgressBar(maxval = len(smids),
                                    widgets = widgets).start()
+    if option.user:
+        user = option.user
+    else:
+        user = read_user(option.config)
+    if option.passwd:
+        passwd = option.passwd
+    else:
+        user = read_passwd(option.config)
+        
     for smid in smids:
         pbar.update(pbar.currval + 1)
-        nico_download(smid, options.user, options.passwd, options.iphone)
+        nico_download(smid, user, passwd, options.iphone)
     pbar.finish()
