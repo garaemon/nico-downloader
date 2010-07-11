@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #coding:sjis
 """
-usage: nico-downloader --user=USERNAME --passwd=PASSWD mylist_url
+usage: nico-downloader.py --user=USERNAME --passwd=PASSWD [OPTIONS] mylist_url
+currently supported options are:
+  --iphone (convert the movies for iphone using ffmpeg and libx264)
 
 this script is inspired by http://d.hatena.ne.jp/lolloo-htn/20090417/1239972394.
 """
@@ -19,6 +21,9 @@ import socket
 from optparse import OptionParser, OptionValueError
 import subprocess
 import codecs
+import progressbar
+
+debug = True
 
 socket.setdefaulttimeout(10)
 sys.stdout = codecs.getwriter('utf_8')(sys.stdout)
@@ -34,13 +39,13 @@ def getids(url,conn):
     return ret
 
 def nico_connect(userid, passwd):
-    print "connecting to nicovideo..."
+    if debug:
+        print "connecting to nicovideo..."
     req = urllib2.Request("https://secure.nicovideo.jp/secure/login?site=niconico")
     req.add_data(urllib.urlencode({"mail": userid, "password": passwd}))
     opener.open(req)
 
-def nico_download(smid, user, passwd):
-    print "downloading %s" % smid
+def nico_download(smid, user, passwd, iphonep):
     while True:
         try:
             time.sleep(10)
@@ -57,19 +62,39 @@ def nico_download(smid, user, passwd):
                 res = opener.open(videoURL, timeout=120)
                 ext = res.info().getsubtype()
                 data = res.read()
-                if re.search(r"low$",videoURL):
-                    videoTitle = "(LOW)"+videoTitle
-                ofh = open(videoTitle+"."+ext,"wb")
+                #if re.search(r"low$",videoURL):
+                #    videoTitle = "(LOW)"+videoTitle
+                ofh = open(fname)
                 ofh.write(data)
                 ofh.close()
-                print "Downloaded: %s" % smid
             else:
-                print "%s is already downloaded" % smid
+                if debug:
+                    print "%s is already downloaded" % smid
+            try:
+                if iphonep:
+                    outname = videoTitle + "_iphone" + ".mp4"
+                    convert_to_iphone(fname, outname)
+            except:
+                print "converting %s to iphone is failed" % fname
             break
         except Exception, e:
-            print "error %s" % e
+            if debug:
+                print "error %s" % e
             nico_connect(user, passwd)
             time.sleep(100)
+            
+def convert_to_iphone(inname, outname):
+    if not os.path.exists(outname):
+        subprocess.check_call(["ffmpeg", "-y", "-i", inname,
+                               "-f", "mp4",
+                               "-s", "960x640", "-aspect",
+                               "960:640",
+                               "-vpre", "default",
+                               "-acodec",
+                               "libfaac", "-async", "4800",
+                               "-dts_delta_threshold", "1",
+                               "-vcodec", "libx264", "-qscale", "7",
+                               outname])
 
 def setup_parser(parser):
     parser.add_option("--user", "-u",
@@ -82,6 +107,11 @@ def setup_parser(parser):
                       default = False,
                       help = "specify your niconico acount's password",
                       action = "store")
+    parser.add_option("--iphone",
+                      dest = "iphone",
+                      default = False,
+                      help = "specify your niconico acount's password",
+                      action = "store_true")
 
 def usage():
     print __doc__ % vars()
@@ -100,5 +130,11 @@ if __name__ == "__main__":
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
     nico_connect(options.user, options.passwd)
     smids = getids(url, opener)
+    widgets = ["downloading: ", progressbar.Percentage(),
+               progressbar.Bar()]
+    pbar = progressbar.ProgressBar(maxval = len(smids),
+                                   widgets = widgets).start()
     for smid in smids:
-        nico_download(smid, options.user, options.passwd)
+        pbar.update(pbar.currval + 1)
+        nico_download(smid, options.user, options.passwd, options.iphone)
+    pbar.finish()
