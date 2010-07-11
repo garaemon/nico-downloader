@@ -22,6 +22,7 @@ from optparse import OptionParser, OptionValueError
 import subprocess
 import codecs
 import progressbar
+import multiprocessing
 
 debug = True
 
@@ -82,18 +83,22 @@ def nico_download(smid, user, passwd, iphonep):
                 print "error %s" % e
             nico_connect(user, passwd)
             time.sleep(100)
-            
+
+
 def convert_to_iphone(inname, outname):
     if not os.path.exists(outname):
-        subprocess.check_call(["ffmpeg", "-y", "-i", inname,
+        subprocess.check_call(["ffmpeg", "-y",
+                               "-i", inname,
                                "-f", "mp4",
-                               "-s", "960x640", "-aspect",
-                               "960:640",
+                               "-acodec", "libfaac",
+                               "-vcodec", "libx264",
                                "-vpre", "default",
-                               "-acodec",
-                               "libfaac", "-async", "4800",
+                               "-s", "960x640", "-aspect", "960:640",
+                               "-threads", str(multiprocessing.cpu_count()),
+                               "-sameq",
+                               "-async", "4800",
                                "-dts_delta_threshold", "1",
-                               "-vcodec", "libx264", "-qscale", "7",
+                               "-qscale", "7",
                                outname])
 
 def setup_parser(parser):
